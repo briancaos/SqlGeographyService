@@ -84,7 +84,7 @@ namespace BrianCaos
     public static SqlGeography BuildPolygon(List<List<double[]>> coordinates)
     {
       if (coordinates == null || coordinates.Count == 0)
-        throw new ArgumentException("MultiPolygon must contain at least one polygon.");
+        throw new ArgumentException("Polygon must contain at least one polygon.");
 
       var builder = new SqlGeographyBuilder();
       builder.SetSrid(4326);
@@ -118,7 +118,7 @@ namespace BrianCaos
         }
         builder.EndFigure(); // ring (outer or hole)
       }
-      builder.EndGeography(); // multipolygon
+      builder.EndGeography(); // polygon
 
       return builder.ConstructedGeography;
     }
