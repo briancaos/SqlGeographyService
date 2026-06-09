@@ -60,6 +60,67 @@ A **MultiPolygon** is an array of Polygon coordinate arrays:
 }
 ```
 
+## FeatureCollection
+
+`FeatureCollection` is a full C# representation of the [GeoJSON FeatureCollection](https://tools.ietf.org/html/rfc7946#section-3.3) object (RFC 7946). It maps directly to the JSON structure used by tools such as [geojson.io](https://geojson.io/) and [MapTiler](https://www.maptiler.com/), making it straightforward to load, inspect, and process GeoJSON files.
+
+A GeoJSON file typically looks like this:
+
+```json
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [10.0, 55.0],
+            [12.0, 55.0],
+            [12.0, 57.0],
+            [10.0, 57.0],
+            [10.0, 55.0]
+          ]
+        ]
+      },
+      "properties": {
+        "name": "My Region",
+        "population": 42000
+      }
+    }
+  ]
+}
+```
+
+The C# classes map to this structure as follows:
+
+- `FeatureCollection` — the root object with `type: "FeatureCollection"` and a `features` array
+- `Feature` — each entry in `features`, with `type: "Feature"`, a `geometry`, and a `properties` bag
+- `FeatureGeometry` — the geometry object with a `type` string (`"Polygon"`, `"MultiPolygon"`, etc.) and a raw `coordinates` element
+- `Feature.Properties` is a `JsonElement?`, so any JSON object — including nested structures — is preserved without requiring a fixed schema
+
+### Deserializing a GeoJSON file
+
+```csharp
+using System.Text.Json;
+
+var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+
+await using var stream = File.OpenRead("regions.geojson");
+var collection = await JsonSerializer.DeserializeAsync<FeatureCollection>(stream, options);
+
+foreach (var feature in collection?.Features ?? [])
+{
+    var geometry = feature.Geometry;
+    if (geometry == null) continue;
+
+    SqlGeography shape = SqlGeographyService.ToSqlGeography(geometry);
+
+    // use shape as needed, e.g. insert into SQL Server
+}
+```
+
 ## Inserting into SQL Server
 
 Given a table with a `geography` column:
